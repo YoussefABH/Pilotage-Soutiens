@@ -1,0 +1,81 @@
+{
+  "entities": {
+    "BackupData": {
+      "title": "BackupData",
+      "description": "All data for a specific academic year including courses, students, sessions, and receipts.",
+      "type": "object",
+      "properties": {
+        "courses": {
+          "type": "array",
+          "description": "List of courses"
+        },
+        "students": {
+          "type": "array",
+          "description": "List of enrolled students"
+        },
+        "teachers": {
+          "type": "array",
+          "description": "List of teachers"
+        },
+        "sessions": {
+          "type": "array",
+          "description": "List of scheduled class sessions"
+        },
+        "groups": {
+          "type": "array",
+          "description": "List of student groups"
+        },
+        "rooms": {
+          "type": "array",
+          "description": "List of classrooms"
+        },
+        "themes": {
+          "type": "array",
+          "description": "List of pedagogical themes"
+        },
+        "objectives": {
+          "type": "array",
+          "description": "List of learning objectives"
+        },
+        "receipts": {
+          "type": "array",
+          "description": "List of payments and financial receipts"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last synchronization timestamp"
+        }
+      }
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User account registration and permissions profile",
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["admin", "teacher", "student", "parent", "guest"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "active", "suspended"]
+        }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "BackupData",
+      "description": "Primary user configuration and default/fallback data"
+    },
+    "/users/{userId}/years/{yearId}": {
+      "schema": "BackupData",
+      "description": "Academic year-specific backup data separate from other school years"
+    },
+    "/userProfiles/{userId}": {
+      "schema": "UserProfile",
+      "description": "Permissions and registration metadata for accounts"
+    }
+  }
+}

@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Reusable, secure helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isVerified() {
+      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'google.com');
+    }
+    
+    function getProfile(uid) {
+      return get(/databases/$(database)/documents/userProfiles/$(uid)).data;
+    }
+    
+    function isEmailAdmin() {
+      return isSignedIn() && (request.auth.token.email == 'youssef.a.b.h@gmail.com');
+    }
+    
+    function isAdmin() {
+      return isEmailAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/userProfiles/$(request.auth.uid)) && getProfile(request.auth.uid).role == 'admin');
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Audit logs
+    match /auditLogs/{log} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if false;
+    }
+    
+    // Backup data / User data
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+      allow read, write: if isAdmin();
+      
+      match /years/{yearId} {
+        allow read, write: if isOwner(userId);
+        allow read, write: if isAdmin();
+      }
+    }
+    
+    // User profiles
+    match /userProfiles/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) && (
+        isEmailAdmin() || (
+          (!("role" in request.resource.data) || request.resource.data.role == 'guest') &&
+          (!("status" in request.resource.data) || request.resource.data.status == 'pending')
+        )
+      );
+      allow update: if isAdmin() || (
+        isOwner(userId) && (
+          (!("role" in request.resource.data) || request.resource.data.role == resource.data.role) &&
+          (!("status" in request.resource.data) || request.resource.data.status == resource.data.status)
+        )
+      );
+      allow delete: if isAdmin();
+    }
+  }
+}
